@@ -332,6 +332,15 @@ let rawData = [], filteredData = [], allDesigners = [], charts = {};
 let refreshInterval = null, countdownInterval = null, nextRefreshTime = null;
 let activeStatusFilter = 'all', activeQuickFilter = 'all';
 
+// ===== HARDCODED SHEET URL - AUTO LOADS ON PAGE OPEN =====
+const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS2derQVcOsOpQlc5JJx-PBuxKkexQka1iBfHjf2qrWl5bmeaCTE4qOakXMVNWl4L4YX0UGUCMUIbO6/pub?output=csv';
+
+// Auto-load on page open - skip setup screen
+window.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('setupSection').style.display = 'none';
+  fetchData(SHEET_CSV_URL);
+});
+
 const TODAY = new Date(); TODAY.setHours(0,0,0,0);
 document.getElementById('todayDisplay').textContent =
   TODAY.toLocaleDateString('en-IN', { weekday:'short', day:'2-digit', month:'short', year:'numeric' });
@@ -446,10 +455,10 @@ function showDashboard(url) {
   document.getElementById('liveBadge').style.display = 'flex';
   buildDesignerFilters(); applyFiltersAndRender();
   if (refreshInterval) clearInterval(refreshInterval);
-  if (url) {
-    refreshInterval = setInterval(() => { fetchData(url); startCountdown(); }, 60000);
-    startCountdown();
-  }
+  // Always use hardcoded URL for auto-refresh
+  const refreshUrl = url || SHEET_CSV_URL;
+  refreshInterval = setInterval(() => { fetchData(refreshUrl); startCountdown(); }, 60000);
+  startCountdown();
   updateRefreshTime();
 }
 function startCountdown() {
