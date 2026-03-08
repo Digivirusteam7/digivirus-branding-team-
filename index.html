@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DigiVirus — Founder Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+:root{--bg:#0a0e17;--sf:#111827;--sf2:#1a2236;--bd:#1e293b;--tx:#e2e8f0;--tm:#64748b;--ac:#06d6a0;--ac2:#118ab2;--pn:#f59e0b;--dn:#06d6a0;--ov:#ef4444;--pp:#8b5cf6;--gd:#fbbf24;--r:12px}
+*{margin:0;padding:0;box-sizing:border-box}body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh}
+.hd{background:linear-gradient(135deg,#111827,#1a1a2e);border-bottom:1px solid var(--bd);padding:12px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;backdrop-filter:blur(12px)}
+.hd h1{font-family:'Space Mono',monospace;font-size:1.15rem;background:linear-gradient(135deg,var(--ac),var(--ac2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hd-r{display:flex;align-items:center;gap:12px}.td{font-size:.75rem;color:var(--tm);font-family:'Space Mono',monospace}
+.lb{display:flex;align-items:center;gap:5px;font-size:.72rem;color:var(--ac)}.lb .dot{width:6px;height:6px;background:var(--ac);border-radius:50%;animation:p 1.5s infinite}
+@keyframes p{0%,100%{box-shadow:0 0 0 0 rgba(6,214,160,.4)}50%{box-shadow:0 0 0 5px rgba(6,214,160,0)}}
+.rbtn{padding:5px 12px;background:var(--sf2);border:1px solid var(--ac);border-radius:8px;color:var(--ac);font-size:.76rem;cursor:pointer;font-family:'DM Sans'}
+.tbar{display:flex;background:var(--sf);border-bottom:1px solid var(--bd);padding:0 24px;overflow-x:auto}
+.tab{padding:10px 18px;font-size:.8rem;font-weight:600;color:var(--tm);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}.tab:hover{color:var(--tx)}.tab.active{color:var(--ac);border-bottom-color:var(--ac)}
+.tc{display:none;padding:20px 24px;max-width:1440px;margin:0 auto}.tc.active{display:block}
+.sec{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);padding:16px;margin-bottom:14px}
+.sec h3{font-family:'Space Mono',monospace;font-size:.85rem;margin-bottom:10px;color:var(--ac)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}.g3{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}
+.g6{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+.sc{background:var(--sf2);border:1px solid var(--bd);border-radius:10px;padding:12px 14px;position:relative;overflow:hidden;cursor:pointer;transition:all .15s}
+.sc:hover{border-color:var(--ac);transform:translateY(-1px)}
+.sc::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.sc.bl::before{background:var(--ac2)}.sc.gn::before{background:var(--dn)}.sc.yl::before{background:var(--pn)}.sc.rd::before{background:var(--ov)}.sc.pp::before{background:var(--pp)}.sc.gr::before{background:linear-gradient(90deg,var(--ac),var(--ac2))}
+.sc .l{font-size:.65rem;color:var(--tm);text-transform:uppercase;letter-spacing:.4px}.sc .v{font-family:'Space Mono',monospace;font-size:1.4rem;font-weight:700;margin-top:2px}.sc .s{font-size:.65rem;color:var(--tm);margin-top:1px}
+.sc.bl .v{color:var(--ac2)}.sc.gn .v{color:var(--dn)}.sc.yl .v{color:var(--pn)}.sc.rd .v{color:var(--ov)}.sc.pp .v{color:var(--pp)}.sc.gr .v{color:var(--ac)}
+.fl{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px;align-items:center;padding:8px 10px;background:var(--sf);border:1px solid var(--bd);border-radius:var(--r)}
+.qb{padding:4px 10px;background:var(--sf2);border:1px solid var(--bd);border-radius:16px;color:var(--tm);font-size:.75rem;cursor:pointer;font-family:'DM Sans';transition:all .15s}
+.qb:hover{border-color:var(--ac2);color:var(--tx)}.qb.active{background:rgba(6,214,160,.12);border-color:var(--ac);color:var(--ac);font-weight:600}
+.ql{font-size:.7rem;color:var(--tm);font-weight:600}.qs{width:1px;height:18px;background:var(--bd);margin:0 3px}
+.fd{padding:4px 7px;background:var(--sf);border:1px solid var(--bd);border-radius:6px;color:var(--tx);font-size:.75rem;outline:none}
+.cc{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);padding:14px}
+.cc h3{font-family:'Space Mono',monospace;font-size:.8rem;color:var(--tx);margin-bottom:10px}.cc canvas{max-height:220px}
+.ts{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);overflow:hidden;margin-bottom:14px}
+.tsh{padding:8px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--bd)}
+.tsh h3{font-family:'Space Mono',monospace;font-size:.82rem;margin:0}
+.tbl{width:100%;border-collapse:collapse}.tbl th{padding:6px 8px;text-align:left;font-size:.65rem;color:var(--tm);text-transform:uppercase;border-bottom:1px solid var(--bd);background:var(--sf2)}
+.tbl td{padding:6px 8px;font-size:.78rem;border-bottom:1px solid rgba(30,41,59,.5)}.tbl tr:hover td{background:rgba(6,214,160,.03)}
+.sb{padding:2px 7px;border-radius:14px;font-size:.7rem;font-weight:600}.sb.done{background:rgba(6,214,160,.15);color:var(--dn)}.sb.pending{background:rgba(245,158,11,.15);color:var(--pn)}.sb.overdue{background:rgba(239,68,68,.15);color:var(--ov)}
+.tsc{max-height:350px;overflow-y:auto}
+.dc{background:var(--sf2);border:1px solid var(--bd);border-radius:10px;padding:12px;cursor:pointer;transition:all .15s}.dc:hover{border-color:var(--ac);transform:translateY(-1px)}
+.dc .dn{font-weight:700;font-size:.85rem;margin-bottom:5px;display:flex;justify-content:space-between;align-items:center}
+.dc .rank{font-family:'Space Mono',monospace;font-size:.65rem;padding:2px 7px;border-radius:8px;font-weight:700}
+.dc .rank.gold{background:rgba(251,191,36,.15);color:var(--gd)}.dc .rank.silver{background:rgba(148,163,184,.15);color:#94a3b8}.dc .rank.bronze{background:rgba(180,83,9,.15);color:#b45309}
+.dc .ds{display:flex;gap:8px;margin-bottom:5px;font-size:.7rem;color:var(--tm)}.dc .ds span{font-family:'Space Mono',monospace;font-weight:700;font-size:.85rem;display:block;margin-top:1px}
+.pb{height:4px;background:var(--bd);border-radius:2px;overflow:hidden}.pb .fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--ac),var(--ac2))}
+.al{padding:7px 12px;border-radius:7px;font-size:.78rem;margin-bottom:6px}
+.al.red{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);color:var(--ov)}.al.yellow{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);color:var(--pn)}.al.green{background:rgba(6,214,160,.08);border:1px solid rgba(6,214,160,.2);color:var(--dn)}
+.dp-ov{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:199;display:none}.dp-ov.show{display:block}
+.dp{position:fixed;right:-420px;top:0;bottom:0;width:400px;background:var(--sf);border-left:1px solid var(--bd);z-index:200;transition:right .3s;overflow-y:auto;padding:18px}.dp.open{right:0}
+.dp .cl{position:absolute;top:10px;right:14px;background:none;border:none;color:var(--tm);font-size:1.2rem;cursor:pointer}
+.dp h3{font-family:'Space Mono',monospace;font-size:.9rem;color:var(--ac);margin-bottom:12px;padding-right:28px}
+.it{font-size:.7rem;color:var(--tm);padding:5px 8px;background:var(--sf2);border-radius:5px;margin-bottom:10px;border-left:3px solid var(--ac2)}
+.pop-ov{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:300;display:none;align-items:center;justify-content:center;padding:20px}.pop-ov.show{display:flex}
+.popup{background:var(--sf);border:1px solid var(--bd);border-radius:14px;max-width:650px;width:100%;max-height:82vh;overflow-y:auto;padding:22px;position:relative}
+.popup h2{font-family:'Space Mono',monospace;font-size:1rem;color:var(--ac);margin-bottom:4px}
+.popup .cbtn{position:absolute;top:12px;right:16px;background:none;border:none;color:var(--tm);font-size:1.3rem;cursor:pointer}
+.pst{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:12px 0}.pst>div{text-align:center;padding:8px;background:var(--sf2);border-radius:7px}
+.pst .n{font-family:'Space Mono',monospace;font-size:1.2rem;font-weight:700}.pst .lb2{font-size:.65rem;color:var(--tm);margin-top:1px}
+.loading-overlay{position:fixed;inset:0;background:rgba(10,14,23,.92);display:flex;align-items:center;justify-content:center;z-index:200;flex-direction:column;gap:12px}
+.spinner{width:34px;height:34px;border:3px solid var(--bd);border-top-color:var(--ac);border-radius:50%;animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}.hidden{display:none!important}
+@media(max-width:768px){.hd{padding:10px 12px;flex-wrap:wrap;gap:5px}.tc{padding:10px}.g2,.g6{grid-template-columns:1fr}.dp{width:100%;right:-100%}.pst{grid-template-columns:repeat(2,1fr)}.tab{padding:8px 10px;font-size:.74rem}}
+</style>
+</head>
+<body>
+<div class="hd"><h1>📊 DigiVirus — Founder Dashboard</h1><div class="hd-r"><div class="td" id="tD"></div><div class="lb"><span class="dot"></span>LIVE <span id="lr" style="margin-left:3px"></span></div><button class="rbtn" onclick="showRpt()">📋 Report</button></div></div>
+<div class="tbar"><div class="tab active" onclick="st('ops',this)">📋 Operations</div><div class="tab" onclick="st('founder',this)">👑 Founder</div><div class="tab" onclick="st('designers',this)">👤 Designers</div><div class="tab" onclick="st('partners',this)">🤝 Partners</div><div class="tab" onclick="st('monthly',this)">📈 Monthly</div></div>
+<div class="loading-overlay" id="ld"><div class="spinner"></div></div>
+<div class="dp-ov" id="dov" onclick="cdp()"></div>
+<div class="dp" id="dpn"><button class="cl" onclick="cdp()">×</button><div id="dpB"></div></div>
+
+<!-- OPS -->
+<div class="tc active" id="tab-ops">
+<div class="it">💡 Sirf real tasks count (content category wali). Future dates skip. ≤1d = Pending, >1d = Overdue.</div>
+<div style="font-size:.7rem;color:var(--ac2);margin-bottom:8px">🔄 60s sync <span id="nR"></span></div>
+<div class="fl">
+<span class="ql">⚡</span><button class="qb active" data-q="all" onclick="qf('all',this)">All</button><button class="qb" data-q="today" onclick="qf('today',this)">Today</button><button class="qb" data-q="yesterday" onclick="qf('yesterday',this)">Yesterday</button><button class="qb" data-q="thisweek" onclick="qf('thisweek',this)">This Week</button><button class="qb" data-q="lastweek" onclick="qf('lastweek',this)">Last Week</button>
+<div class="qs"></div><span class="ql">Status:</span><button class="qb active" data-s="all" onclick="sf('all',this)">All</button><button class="qb" data-s="pending" onclick="sf('pending',this)">Pending</button><button class="qb" data-s="overdue" onclick="sf('overdue',this)">Overdue</button><button class="qb" data-s="done" onclick="sf('done',this)">Done</button>
+<div class="qs"></div><span class="ql">Designer:</span><div id="dfl" style="display:flex;gap:3px;flex-wrap:wrap"></div>
+<div class="qs"></div><span class="ql">From:</span><input type="date" class="fd" id="dF"><span class="ql">To:</span><input type="date" class="fd" id="dT"><button class="qb" onclick="rf()">✕</button>
+</div>
+<div class="g6" id="oS"></div>
+<div class="g2" style="margin-top:12px"><div class="cc"><h3>Designer Status</h3><canvas id="o1"></canvas></div><div class="cc"><h3>Daily Trend</h3><canvas id="o2"></canvas></div></div>
+<div class="g2" style="margin-top:12px"><div class="cc"><h3>Status</h3><canvas id="o3"></canvas></div><div class="cc"><h3>Partners</h3><canvas id="o4"></canvas></div></div>
+<div class="ts" style="margin-top:12px"><div class="tsh"><h3>📋 Tasks</h3><span style="font-size:.72rem;color:var(--tm)" id="otc"></span></div><div class="tsc"><table class="tbl"><thead><tr><th>Date</th><th>Partner</th><th>Content</th><th>Assigned</th><th>Status</th><th>Age</th></tr></thead><tbody id="otb"></tbody></table></div></div>
+</div>
+
+<!-- FOUNDER -->
+<div class="tc" id="tab-founder">
+<div class="sec"><h3>👑 Snapshot</h3><div class="g6" id="fS"></div><div id="fA" style="margin-top:10px"></div></div>
+<div class="sec"><h3>🔥 Attention — Click for details</h3><div id="fAt"></div></div>
+<div class="g2"><div class="cc"><h3>This Week vs Last</h3><canvas id="f1"></canvas></div><div class="cc"><h3>Designer Today</h3><canvas id="f2"></canvas></div></div>
+<div class="sec" style="margin-top:12px"><h3>📆 Last 4 Weeks</h3><div class="g3" id="fW"></div><canvas id="f3" style="margin-top:10px;max-height:200px"></canvas></div>
+</div>
+
+<!-- DESIGNERS -->
+<div class="tc" id="tab-designers">
+<div class="it">🏆 Click any card for full breakdown. Use filters. Future tasks show as 📅 Scheduled.</div>
+<div class="fl"><span class="ql">Period:</span><button class="qb active" data-dp="all" onclick="dpf('all',this)">All</button><button class="qb" data-dp="today" onclick="dpf('today',this)">Today</button><button class="qb" data-dp="yesterday" onclick="dpf('yesterday',this)">Yesterday</button><button class="qb" data-dp="thisweek" onclick="dpf('thisweek',this)">This Week</button><button class="qb" data-dp="lastweek" onclick="dpf('lastweek',this)">Last Week</button><button class="qb" data-dp="thismonth" onclick="dpf('thismonth',this)">This Month</button><button class="qb" data-dp="lastmonth" onclick="dpf('lastmonth',this)">Last Month</button>
+<div class="qs"></div><span class="ql">From:</span><input type="date" class="fd" id="ddF"><span class="ql">To:</span><input type="date" class="fd" id="ddT"><button class="qb" onclick="document.getElementById('ddF').value='';document.getElementById('ddT').value='';rDT()">✕</button></div>
+<div class="sec"><h3>🏆 Rankings</h3><div class="g3" id="dC"></div></div>
+<div class="g2"><div class="cc"><h3>Completion %</h3><canvas id="d1"></canvas></div><div class="cc"><h3>Task Volume</h3><canvas id="d2"></canvas></div></div>
+</div>
+
+<!-- PARTNERS -->
+<div class="tc" id="tab-partners">
+<div class="it">🤝 Click any partner card for full history. Future tasks show as 📅 Scheduled.</div>
+<div class="fl"><span class="ql">Period:</span><button class="qb active" data-pp="all" onclick="ppf('all',this)">All</button><button class="qb" data-pp="today" onclick="ppf('today',this)">Today</button><button class="qb" data-pp="thisweek" onclick="ppf('thisweek',this)">This Week</button><button class="qb" data-pp="lastweek" onclick="ppf('lastweek',this)">Last Week</button><button class="qb" data-pp="thismonth" onclick="ppf('thismonth',this)">This Month</button>
+<div class="qs"></div><span class="ql">From:</span><input type="date" class="fd" id="ppF"><span class="ql">To:</span><input type="date" class="fd" id="ppT"><button class="qb" onclick="document.getElementById('ppF').value='';document.getElementById('ppT').value='';rPT()">✕</button></div>
+<div class="sec"><h3>🤝 All Partners</h3><div class="g3" id="pC"></div></div>
+<div class="g2"><div class="sec"><h3>⚠ Most Delays</h3><div id="pD"></div></div><div class="sec"><h3>✓ Best Completion</h3><div id="pB"></div></div></div>
+<div class="cc" style="margin-top:12px"><h3>Workload (Top 15)</h3><canvas id="p1" style="max-height:280px"></canvas></div>
+</div>
+
+<!-- MONTHLY -->
+<div class="tc" id="tab-monthly">
+<div class="it">📈 Green going up = improving. Red going down = good.</div>
+<div class="cc"><h3>Monthly Volume</h3><canvas id="m1" style="max-height:240px"></canvas></div>
+<div class="g2" style="margin-top:12px"><div class="cc"><h3>Overdue Trend</h3><canvas id="m2" style="max-height:220px"></canvas></div><div class="cc"><h3>Content Mix</h3><canvas id="m3" style="max-height:220px"></canvas></div></div>
+<div class="sec" style="margin-top:12px"><h3>📅 Months</h3><div class="g3" id="mC"></div></div>
+<div class="sec"><h3>💡 Insights</h3><div id="mI"></div></div>
+</div>
+
+<div class="pop-ov" id="pov" onclick="if(event.target===this)cpop()"><div class="popup"><button class="cbtn" onclick="cpop()">×</button><h2>📋 Daily Report</h2><div style="font-size:.78rem;color:var(--tm);margin-bottom:12px" id="pDt"></div><div class="pst" id="pSt"></div><div id="pBd"></div></div></div>
+
+<script>
+const DU='https://script.google.com/macros/s/AKfycbzgmoCjDS_MOzaUo1qfg_NmA-_dQhJ87uHaAW_0K9mUW6O6iBijRKF9HQ_wyDzpHFg6/exec';
+let R=[],F=[],Des=[],C={},_ri,_ci,_nrt,_s='all',_q='all',_dp='all';
+const T=new Date();T.setHours(0,0,0,0);
+document.getElementById('tD').textContent=T.toLocaleDateString('en-IN',{weekday:'short',day:'2-digit',month:'short',year:'numeric'});
+window.addEventListener('DOMContentLoaded',()=>{fc();ck7();});
+
+function fc(){document.getElementById('ld').classList.remove('hidden');fetch(DU).then(r=>r.text()).then(t=>{document.getElementById('ld').classList.add('hidden');const p=Papa.parse(t,{header:false,skipEmptyLines:true});if(p.data&&p.data.length>1){proc(p.data);rAll();}}).catch(()=>document.getElementById('ld').classList.add('hidden'));}
+
+function pd(s){if(!s)return null;s=String(s).trim();
+if(s.match(/^[A-Z][a-z]{2}\s/)){const d=new Date(s);if(!isNaN(d)){d.setHours(0,0,0,0);return d;}}
+if(/^\d{5}$/.test(s)){const d=new Date((parseInt(s)-25569)*864e5);if(!isNaN(d)){d.setHours(0,0,0,0);return d;}}
+let m=s.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);if(m)return new Date(+m[3],+m[2]-1,+m[1]);
+return null;}
+
+function proc(rows){R=[];
+for(let i=0;i<rows.length;i++){const r=rows[i];if(!r||r.length<5)continue;
+const ds=String(r[0]||''),ptnr=String(r[2]||'').trim(),cat=String(r[3]||'').trim(),asgn=String(r[4]||'').trim(),rs=String(r[5]||'').trim().toLowerCase(),desc=String(r[8]||'').trim();
+if(ds.toLowerCase().includes('contact')||ds.toLowerCase().includes('chat gpt'))continue;
+if(!cat.trim()||!ptnr)continue;
+const dt=pd(ds);if(!dt)continue;
+// SKIP FUTURE DATES for status calculation
+if(dt>T){R.push({date:dt,partner:ptnr,category:cat,assigned:asgn||'Unassigned',status:'future',desc,ageDays:Math.floor((T-dt)/864e5),ctype:gct(cat)});continue;}
+let st='pending';if(rs.includes('done'))st='done';else if(Math.floor((T-dt)/864e5)>1)st='overdue';
+R.push({date:dt,partner:ptnr,category:cat,assigned:asgn||'Unassigned',status:st,desc,ageDays:Math.floor((T-dt)/864e5),ctype:gct(cat)});}
+Des=[...new Set(R.map(d=>d.assigned))].filter(a=>a&&a!=='Unassigned').sort();}
+
+function gct(c){const l=c.toLowerCase();if(l.includes('reel'))return'reel';if(l.includes('festival')||l.includes('eid')||l.includes('holi')||l.includes('navr')||l.includes('ram nav')||l.includes('shivr'))return'festival';if(l.includes('post'))return'post';return'creative';}
+
+// All tasks including future (future shown as "scheduled")
+function AT(){return R;}
+// Only past+today tasks (no future) 
+function PT(){return R.filter(t=>t.status!=='future');}
+
+// Scheduled badge style
+const SB_SCHED='padding:2px 7px;border-radius:14px;font-size:.7rem;font-weight:600;background:rgba(17,138,178,.15);color:var(--ac2)';
+
+function st(id,el){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.tc').forEach(t=>t.classList.remove('active'));el.classList.add('active');document.getElementById('tab-'+id).classList.add('active');}
+
+function gws(d){const day=d.getDay(),diff=d.getDate()-day+(day===0?-6:1);return new Date(d.getFullYear(),d.getMonth(),diff);}
+function fi(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function fd(d){return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0');}
+function sd(a,b){return a&&b&&a.getTime()===b.getTime();}
+function mk(id,cfg){if(C[id])C[id].destroy();C[id]=new Chart(document.getElementById(id),cfg);}
+const CO={responsive:true,maintainAspectRatio:true,plugins:{legend:{labels:{color:'#94a3b8',font:{family:'DM Sans',size:9}}}},scales:{x:{ticks:{color:'#64748b',font:{size:8}},grid:{color:'rgba(30,41,59,.5)'}},y:{ticks:{color:'#64748b',font:{size:8}},grid:{color:'rgba(30,41,59,.5)'}}}};
+const CS={...CO,scales:{x:{...CO.scales.x,stacked:true},y:{...CO.scales.y,stacked:true}}};
+
+function rAll(){bdf();af();rF();rDT();rPT();rMT();if(_ri)clearInterval(_ri);_ri=setInterval(()=>{fc();scd();},60000);scd();urt();}
+function scd(){_nrt=Date.now()+60000;if(_ci)clearInterval(_ci);_ci=setInterval(()=>{document.getElementById('nR').textContent=`(${Math.max(0,Math.ceil((_nrt-Date.now())/1000))}s)`;},1000);}
+function urt(){const n=new Date();document.getElementById('lr').textContent=`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`;}
+
+// FILTERS
+function bdf(){const c=document.getElementById('dfl');c.innerHTML='<span class="qb active" data-d="all" onclick="tdf(this)">All</span>';Des.forEach(d=>{c.innerHTML+=`<span class="qb" data-d="${d}" onclick="tdf(this)">${d}</span>`;});}
+function tdf(el){const ch=document.querySelectorAll('#dfl .qb');if(el.dataset.d==='all'){ch.forEach(c=>c.classList.remove('active'));el.classList.add('active');}else{ch[0].classList.remove('active');el.classList.toggle('active');if(!document.querySelector('#dfl .qb.active'))ch[0].classList.add('active');}af();}
+function qf(t,el){document.querySelectorAll('[data-q]').forEach(b=>b.classList.remove('active'));el.classList.add('active');_q=t;
+const df=document.getElementById('dF'),dt=document.getElementById('dT');
+if(t==='all'){df.value='';dt.value='';}
+else if(t==='today'){df.value=fi(T);dt.value=fi(T);}
+else if(t==='yesterday'){const y=new Date(T);y.setDate(y.getDate()-1);df.value=fi(y);dt.value=fi(y);}
+else if(t==='thisweek'){const s=gws(T),e=new Date(s);e.setDate(e.getDate()+6);df.value=fi(s);dt.value=fi(e);}
+else if(t==='lastweek'){const ts=gws(T),e=new Date(ts);e.setDate(e.getDate()-1);const s=new Date(e);s.setDate(s.getDate()-6);df.value=fi(s);dt.value=fi(e);}
+af();}
+function sf(t,el){document.querySelectorAll('[data-s]').forEach(b=>b.classList.remove('active'));el.classList.add('active');_s=t;af();}
+function rf(){document.getElementById('dF').value='';document.getElementById('dT').value='';_s='all';_q='all';document.querySelectorAll('[data-q],.qb[data-s],[data-d]').forEach(b=>b.classList.remove('active'));document.querySelector('[data-q="all"]').classList.add('active');document.querySelector('[data-s="all"]').classList.add('active');document.querySelector('#dfl .qb').classList.add('active');af();}
+document.getElementById('dF').addEventListener('change',()=>{document.querySelectorAll('[data-q]').forEach(b=>b.classList.remove('active'));af();});
+document.getElementById('dT').addEventListener('change',()=>{document.querySelectorAll('[data-q]').forEach(b=>b.classList.remove('active'));af();});
+
+function af(){
+const ac=document.querySelectorAll('#dfl .qb.active'),sds=[...ac].map(c=>c.dataset.d),allD=sds.includes('all');
+const dfv=document.getElementById('dF').value?new Date(document.getElementById('dF').value+'T00:00:00'):null;
+const dtv=document.getElementById('dT').value?new Date(document.getElementById('dT').value+'T23:59:59'):null;
+F=PT().filter(t=>{
+if(!allD&&!sds.includes(t.assigned))return false;
+if(dfv&&t.date<dfv)return false;
+if(dtv&&t.date>dtv)return false;
+if(_s!=='all'&&t.status!==_s)return false;
+return true;});
+rOps();}
+
+// SHOW TASKS IN SIDE PANEL BY STATUS
+function showByStatus(status,label,data){
+const tasks=(data||F).filter(t=>status==='all'?true:t.status===status);
+let h=`<h3>${label} (${tasks.length})</h3>`;
+tasks.sort((a,b)=>b.date-a.date).forEach(t=>{
+h+=`<div style="padding:5px 0;border-bottom:1px solid var(--bd);font-size:.76rem"><div style="display:flex;justify-content:space-between"><span style="font-weight:600">${t.partner}</span><span class="sb ${t.status}">${t.status}</span></div><div style="color:var(--tm)">${fd(t.date)} · ${t.assigned} · ${t.category.substring(0,40)}</div></div>`;});
+document.getElementById('dpB').innerHTML=h;odp();}
+
+function showDesigner(n){
+const tasks=AT().filter(t=>t.assigned===n);const dn=tasks.filter(t=>t.status==='done').length,pn=tasks.filter(t=>t.status==='pending').length,ov=tasks.filter(t=>t.status==='overdue').length,ft=tasks.filter(t=>t.status==='future').length;
+let h=`<h3>👤 ${n}</h3><div class="g6" style="margin-bottom:10px"><div class="sc gn" onclick="showByStatus('done','${n} Done',AT().filter(t=>t.assigned==='${n}'))"><div class="l">Done</div><div class="v" style="font-size:1.1rem">${dn}</div></div><div class="sc yl" onclick="showByStatus('pending','${n} Pending',AT().filter(t=>t.assigned==='${n}'))"><div class="l">Pending</div><div class="v" style="font-size:1.1rem">${pn}</div></div><div class="sc rd" onclick="showByStatus('overdue','${n} Overdue',AT().filter(t=>t.assigned==='${n}'))"><div class="l">Overdue</div><div class="v" style="font-size:1.1rem">${ov}</div></div>${ft?`<div class="sc bl"><div class="l">📅 Scheduled</div><div class="v" style="font-size:1.1rem">${ft}</div></div>`:''}</div>`;
+const pp={};tasks.forEach(t=>{if(!pp[t.partner])pp[t.partner]=0;pp[t.partner]++;});
+h+='<div style="font-size:.78rem;font-weight:600;margin-bottom:6px">Partners:</div>';
+Object.entries(pp).sort((a,b)=>b[1]-a[1]).forEach(([p,c])=>{h+=`<div style="padding:4px 0;border-bottom:1px solid rgba(30,41,59,.3);font-size:.76rem;display:flex;justify-content:space-between"><span>${p}</span><span>${c}</span></div>`;});
+h+='<div style="font-size:.78rem;font-weight:600;margin:10px 0 6px">Recent:</div>';
+tasks.sort((a,b)=>b.date-a.date).slice(0,25).forEach(t=>{const lb=t.status==='future'?'📅Sched':t.status;h+=`<div style="padding:4px 0;border-bottom:1px solid rgba(30,41,59,.3);font-size:.74rem;display:flex;justify-content:space-between"><span>${fd(t.date)} ${t.partner}</span><span ${t.status==='future'?`style="${SB_SCHED}"`:`class="sb ${t.status}"`}>${lb}</span></div>`;});
+document.getElementById('dpB').innerHTML=h;odp();}
+
+function showPartner(n){
+const tasks=AT().filter(t=>t.partner===n);const dn=tasks.filter(t=>t.status==='done').length,ov=tasks.filter(t=>t.status==='overdue').length,ft=tasks.filter(t=>t.status==='future').length;
+let h=`<h3>🤝 ${n}</h3><div class="g6" style="margin-bottom:10px"><div class="sc bl"><div class="l">Total</div><div class="v" style="font-size:1.1rem">${tasks.length}</div></div><div class="sc gn"><div class="l">Done</div><div class="v" style="font-size:1.1rem">${dn}</div></div><div class="sc rd"><div class="l">Overdue</div><div class="v" style="font-size:1.1rem">${ov}</div></div>${ft?`<div class="sc bl"><div class="l">📅 Scheduled</div><div class="v" style="font-size:1.1rem">${ft}</div></div>`:''}</div>`;
+const des=new Set();tasks.forEach(t=>{if(t.assigned!=='Unassigned')des.add(t.assigned);});
+h+=`<div style="font-size:.78rem;margin-bottom:8px">Designers: <strong>${[...des].join(', ')}</strong></div>`;
+h+='<div style="font-size:.78rem;font-weight:600;margin-bottom:6px">All tasks:</div>';
+tasks.sort((a,b)=>b.date-a.date).forEach(t=>{const stl=t.status==='future'?SB_SCHED:`class="sb ${t.status}"`;const lb=t.status==='future'?'📅 Scheduled':t.status;h+=`<div style="padding:4px 0;border-bottom:1px solid rgba(30,41,59,.3);font-size:.74rem"><div style="display:flex;justify-content:space-between"><span>${fd(t.date)} — ${t.assigned}</span><span ${t.status==='future'?`style="${SB_SCHED}"`:`class="sb ${t.status}"`}>${lb}</span></div><div style="color:var(--tm);font-size:.7rem">${t.category}</div></div>`;});
+document.getElementById('dpB').innerHTML=h;odp();}
+
+function odp(){document.getElementById('dpn').classList.add('open');document.getElementById('dov').classList.add('show');}
+function cdp(){document.getElementById('dpn').classList.remove('open');document.getElementById('dov').classList.remove('show');}
+
+// OPS
+function rOps(){
+const tot=F.length,dn=F.filter(t=>t.status==='done').length,pn=F.filter(t=>t.status==='pending').length,ov=F.filter(t=>t.status==='overdue').length;
+const tt=PT().filter(t=>sd(t.date,T)),td=tt.filter(t=>t.status==='done').length;
+document.getElementById('oS').innerHTML=`
+<div class="sc gr" onclick="showByStatus('all','Today',PT().filter(t=>t.date&&t.date.getTime()===${T.getTime()}))"><div class="l">📅 Today</div><div class="v">${tt.length}</div><div class="s">${td} done, ${tt.length-td} left</div></div>
+<div class="sc bl" onclick="showByStatus('all','All Filtered')"><div class="l">Total</div><div class="v">${tot}</div></div>
+<div class="sc gn" onclick="showByStatus('done','✓ Done')"><div class="l">Done</div><div class="v">${dn}</div></div>
+<div class="sc yl" onclick="showByStatus('pending','● Pending')"><div class="l">Pending ≤1d</div><div class="v">${pn}</div></div>
+<div class="sc rd" onclick="showByStatus('overdue','⚠ Overdue')"><div class="l">Overdue >1d</div><div class="v">${ov}</div></div>
+<div class="sc pp"><div class="l">Rate</div><div class="v">${tot?Math.round(dn/tot*100):0}%</div></div>`;
+// Charts
+const ds={};F.forEach(t=>{if(t.assigned==='Unassigned')return;if(!ds[t.assigned])ds[t.assigned]={done:0,pending:0,overdue:0};ds[t.assigned][t.status]++;});const dl=Object.keys(ds);
+mk('o1',{type:'bar',data:{labels:dl,datasets:[{label:'Done',data:dl.map(d=>ds[d].done),backgroundColor:'#06d6a0',borderRadius:3},{label:'Pending',data:dl.map(d=>ds[d].pending),backgroundColor:'#f59e0b',borderRadius:3},{label:'Overdue',data:dl.map(d=>ds[d].overdue),backgroundColor:'#ef4444',borderRadius:3}]},options:CS});
+const dm={};F.forEach(t=>{const k=t.date.getTime();if(!dm[k])dm[k]={t:0,d:0,dt:t.date};dm[k].t++;if(t.status==='done')dm[k].d++;});const sa=Object.values(dm).sort((a,b)=>a.dt-b.dt);
+mk('o2',{type:'line',data:{labels:sa.map(e=>fd(e.dt)),datasets:[{label:'Total',data:sa.map(e=>e.t),borderColor:'#118ab2',backgroundColor:'rgba(17,138,178,.1)',fill:true,tension:.3},{label:'Done',data:sa.map(e=>e.d),borderColor:'#06d6a0',backgroundColor:'rgba(6,214,160,.1)',fill:true,tension:.3}]},options:CO});
+mk('o3',{type:'doughnut',data:{labels:['Done','Pending','Overdue'],datasets:[{data:[dn,pn,ov],backgroundColor:['#06d6a0','#f59e0b','#ef4444'],borderWidth:0}]},options:{responsive:true,plugins:{legend:{labels:{color:'#94a3b8'}}}}});
+const pm={};F.forEach(t=>{pm[t.partner]=(pm[t.partner]||0)+1;});const ps=Object.entries(pm).sort((a,b)=>b[1]-a[1]).slice(0,12);
+mk('o4',{type:'bar',data:{labels:ps.map(p=>p[0]),datasets:[{label:'Tasks',data:ps.map(p=>p[1]),backgroundColor:'#8b5cf6',borderRadius:3}]},options:{...CO,indexAxis:'y'}});
+document.getElementById('otc').textContent=F.length;
+document.getElementById('otb').innerHTML=F.sort((a,b)=>b.date-a.date).slice(0,300).map(t=>`<tr><td>${fd(t.date)}</td><td>${t.partner}</td><td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.category}</td><td>${t.assigned}</td><td><span class="sb ${t.status}">${t.status==='overdue'?'⚠Ovd':t.status==='done'?'✓Done':'●Pend'}</span></td><td style="font-family:'Space Mono';font-size:.7rem;color:${t.status==='overdue'?'var(--ov)':'var(--tm)'}">${t.ageDays===0?'0d':t.ageDays+'d'}</td></tr>`).join('');}
+
+// FOUNDER
+function rF(){
+const pt=PT(),tt=pt.filter(t=>sd(t.date,T)),tdn=tt.filter(t=>t.status==='done').length,tpn=tt.length-tdn;
+const aov=pt.filter(t=>t.status==='overdue').length,apn=pt.filter(t=>t.status==='pending').length;
+const wt=pt.filter(t=>t.date>=gws(T)),wdn=wt.filter(t=>t.status==='done').length;
+document.getElementById('fS').innerHTML=`
+<div class="sc gr" onclick="showByStatus('all','Today',PT().filter(t=>t.date&&t.date.getTime()===${T.getTime()}))"><div class="l">Today</div><div class="v">${tt.length}</div></div>
+<div class="sc gn" onclick="showByStatus('done','Done Today',PT().filter(t=>t.date&&t.date.getTime()===${T.getTime()}))"><div class="l">Done Today</div><div class="v">${tdn}</div></div>
+<div class="sc yl" onclick="showByStatus('pending','All Pending',PT())"><div class="l">All Pending</div><div class="v">${apn}</div></div>
+<div class="sc rd" onclick="showByStatus('overdue','All Overdue',PT())"><div class="l">All Overdue</div><div class="v">${aov}</div></div>
+<div class="sc bl"><div class="l">Week</div><div class="v">${wt.length}</div></div>
+<div class="sc pp"><div class="l">Week %</div><div class="v">${wt.length?Math.round(wdn/wt.length*100):0}%</div></div>`;
+let al='';
+if(aov>3)al+=`<div class="al red">🚨 ${aov} overdue!</div>`;
+if(tpn>0)al+=`<div class="al yellow">📌 ${tpn} pending today.</div>`;
+if(tdn>=tt.length&&tt.length>0)al+=`<div class="al green">✅ All done today!</div>`;
+document.getElementById('fA').innerHTML=al;
+const pp={};pt.filter(t=>t.status==='overdue').forEach(t=>{pp[t.partner]=(pp[t.partner]||0)+1;});
+document.getElementById('fAt').innerHTML=Object.entries(pp).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([p,c])=>`<div onclick="showPartner('${p.replace(/'/g,"\\'")}')" style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--bd);font-size:.8rem;cursor:pointer" onmouseover="this.style.background='var(--sf2)'" onmouseout="this.style.background=''"><span>${p}</span><span style="color:var(--ov);font-family:'Space Mono'">${c} →</span></div>`).join('')||'<div style="color:var(--dn);font-size:.8rem">✅ Clean!</div>';
+// Charts
+const tw=pt.filter(t=>t.date>=gws(T)),lws=new Date(gws(T));lws.setDate(lws.getDate()-7);const lw=pt.filter(t=>t.date>=lws&&t.date<gws(T));
+mk('f1',{type:'bar',data:{labels:['Total','Done','Pending','Overdue'],datasets:[{label:'This',data:[tw.length,tw.filter(t=>t.status==='done').length,tw.filter(t=>t.status==='pending').length,tw.filter(t=>t.status==='overdue').length],backgroundColor:'#06d6a0',borderRadius:3},{label:'Last',data:[lw.length,lw.filter(t=>t.status==='done').length,lw.filter(t=>t.status==='pending').length,lw.filter(t=>t.status==='overdue').length],backgroundColor:'#118ab2',borderRadius:3}]},options:CO});
+const de={};tt.forEach(t=>{if(t.assigned==='Unassigned')return;if(!de[t.assigned])de[t.assigned]={t:0,d:0};de[t.assigned].t++;if(t.status==='done')de[t.assigned].d++;});const del=Object.keys(de);
+mk('f2',{type:'bar',data:{labels:del,datasets:[{label:'Done',data:del.map(d=>de[d].d),backgroundColor:'#06d6a0',borderRadius:3},{label:'Left',data:del.map(d=>de[d].t-de[d].d),backgroundColor:'#ef4444',borderRadius:3}]},options:CS});
+// 4 weeks only
+const wks={};pt.forEach(t=>{const ws=gws(t.date),k=ws.getTime();if(!wks[k])wks[k]={s:ws,t:[]};wks[k].t.push(t);});
+const sorted=Object.values(wks).sort((a,b)=>b.s-a.s).slice(0,4);
+document.getElementById('fW').innerHTML=sorted.map((w,i)=>{const e=new Date(w.s);e.setDate(e.getDate()+6);const tot=w.t.length,dn2=w.t.filter(t=>t.status==='done').length,pct=tot?Math.round(dn2/tot*100):0;const isT=gws(T).getTime()===w.s.getTime();return `<div class="dc" style="${isT?'border-color:var(--ac)':''}"><div class="dn">${isT?'📌 This Week':i===1?'Last Week':'Week'} <span style="font-size:.7rem;color:var(--tm)">${fd(w.s)}-${fd(e)}</span></div><div class="ds"><div>Total<span style="color:var(--ac2)">${tot}</span></div><div>Done<span style="color:var(--dn)">${dn2}</span></div><div>%<span style="color:${pct>=50?'var(--dn)':'var(--ov)'}">${pct}%</span></div></div><div class="pb"><div class="fill" style="width:${pct}%"></div></div></div>`;}).join('');
+const cw=sorted.slice().reverse();
+mk('f3',{type:'bar',data:{labels:cw.map(w=>{const e=new Date(w.s);e.setDate(e.getDate()+6);return fd(w.s)+'-'+fd(e);}),datasets:[{label:'Done',data:cw.map(w=>w.t.filter(t=>t.status==='done').length),backgroundColor:'#06d6a0',borderRadius:3},{label:'Pending',data:cw.map(w=>w.t.filter(t=>t.status==='pending').length),backgroundColor:'#f59e0b',borderRadius:3},{label:'Overdue',data:cw.map(w=>w.t.filter(t=>t.status==='overdue').length),backgroundColor:'#ef4444',borderRadius:3}]},options:CS});}
+
+// DESIGNERS
+function dpf(t,el){document.querySelectorAll('[data-dp]').forEach(b=>b.classList.remove('active'));el.classList.add('active');_dp=t;
+const df=document.getElementById('ddF'),dt=document.getElementById('ddT');
+if(t==='all'){df.value='';dt.value='';}
+else if(t==='today'){df.value=fi(T);dt.value=fi(T);}
+else if(t==='yesterday'){const y=new Date(T);y.setDate(y.getDate()-1);df.value=fi(y);dt.value=fi(y);}
+else if(t==='thisweek'){const s=gws(T),e=new Date(s);e.setDate(e.getDate()+6);df.value=fi(s);dt.value=fi(e);}
+else if(t==='lastweek'){const ts=gws(T),e=new Date(ts);e.setDate(e.getDate()-1);const s=new Date(e);s.setDate(s.getDate()-6);df.value=fi(s);dt.value=fi(e);}
+else if(t==='thismonth'){const s=new Date(T.getFullYear(),T.getMonth(),1),e=new Date(T.getFullYear(),T.getMonth()+1,0);df.value=fi(s);dt.value=fi(e);}
+else if(t==='lastmonth'){const s=new Date(T.getFullYear(),T.getMonth()-1,1),e=new Date(T.getFullYear(),T.getMonth(),0);df.value=fi(s);dt.value=fi(e);}
+rDT();}
+document.getElementById('ddF').addEventListener('change',()=>{document.querySelectorAll('[data-dp]').forEach(b=>b.classList.remove('active'));rDT();});
+document.getElementById('ddT').addEventListener('change',()=>{document.querySelectorAll('[data-dp]').forEach(b=>b.classList.remove('active'));rDT();});
+function gdd(){let d=AT(); // Use ALL data including future
+const dfv=document.getElementById('ddF').value?new Date(document.getElementById('ddF').value+'T00:00:00'):null;
+const dtv=document.getElementById('ddT').value?new Date(document.getElementById('ddT').value+'T23:59:59'):null;
+if(dfv)d=d.filter(t=>t.date>=dfv);
+if(dtv)d=d.filter(t=>t.date<=dtv);
+return d;}
+function rDT(){const data=gdd(),s={};
+data.forEach(t=>{if(t.assigned==='Unassigned')return;if(!s[t.assigned])s[t.assigned]={done:0,pending:0,overdue:0,future:0,total:0};s[t.assigned][t.status]++;s[t.assigned].total++;});
+const ranked=Object.entries(s).sort((a,b)=>{const past_a=a[1].total-a[1].future,past_b=b[1].total-b[1].future;const ra=past_a?a[1].done/past_a:0,rb=past_b?b[1].done/past_b:0;return rb-ra;});
+document.getElementById('dC').innerHTML=ranked.map(([n,v],i)=>{const past=v.total-v.future;const p=past?Math.round(v.done/past*100):0;const rc=i<3?['gold','silver','bronze'][i]:'';return `<div class="dc" onclick="showDesigner('${n}')"><div class="dn">${n}${rc?`<span class="rank ${rc}">#${i+1}</span>`:''}</div><div class="ds"><div>Total<span>${v.total}</span></div><div>Done<span style="color:var(--dn)">${v.done}</span></div><div>Pend<span style="color:var(--pn)">${v.pending}</span></div><div>Ovd<span style="color:var(--ov)">${v.overdue}</span></div>${v.future?`<div>📅<span style="color:var(--ac2)">${v.future}</span></div>`:''}</div><div class="pb"><div class="fill" style="width:${p}%"></div></div><div style="text-align:right;font-size:.68rem;color:var(--tm);margin-top:2px">${p}% (past only)</div></div>`;}).join('');
+mk('d1',{type:'bar',data:{labels:ranked.map(r=>r[0]),datasets:[{label:'%',data:ranked.map(r=>{const p=r[1].total-r[1].future;return p?Math.round(r[1].done/p*100):0;}),backgroundColor:ranked.map((_,i)=>i===0?'#fbbf24':i===1?'#94a3b8':i===2?'#b45309':'#8b5cf6'),borderRadius:3}]},options:{...CO,scales:{...CO.scales,y:{...CO.scales.y,beginAtZero:true,max:100}}}});
+mk('d2',{type:'bar',data:{labels:ranked.map(r=>r[0]),datasets:[{label:'Done',data:ranked.map(r=>r[1].done),backgroundColor:'#06d6a0',borderRadius:3},{label:'Pending',data:ranked.map(r=>r[1].pending),backgroundColor:'#f59e0b',borderRadius:3},{label:'Overdue',data:ranked.map(r=>r[1].overdue),backgroundColor:'#ef4444',borderRadius:3},{label:'Scheduled',data:ranked.map(r=>r[1].future),backgroundColor:'#118ab2',borderRadius:3}]},options:CS});}
+
+// PARTNERS
+let _pp='all';
+function ppf(t,el){document.querySelectorAll('[data-pp]').forEach(b=>b.classList.remove('active'));el.classList.add('active');_pp=t;
+const df=document.getElementById('ppF'),dt=document.getElementById('ppT');
+if(t==='all'){df.value='';dt.value='';}
+else if(t==='today'){df.value=fi(T);dt.value=fi(T);}
+else if(t==='thisweek'){const s=gws(T),e=new Date(s);e.setDate(e.getDate()+6);df.value=fi(s);dt.value=fi(e);}
+else if(t==='lastweek'){const ts=gws(T),e=new Date(ts);e.setDate(e.getDate()-1);const s=new Date(e);s.setDate(s.getDate()-6);df.value=fi(s);dt.value=fi(e);}
+else if(t==='thismonth'){const s=new Date(T.getFullYear(),T.getMonth(),1),e=new Date(T.getFullYear(),T.getMonth()+1,0);df.value=fi(s);dt.value=fi(e);}
+rPT();}
+document.getElementById('ppF').addEventListener('change',()=>{document.querySelectorAll('[data-pp]').forEach(b=>b.classList.remove('active'));rPT();});
+document.getElementById('ppT').addEventListener('change',()=>{document.querySelectorAll('[data-pp]').forEach(b=>b.classList.remove('active'));rPT();});
+function gpd(){let d=AT(); // Use ALL data including future
+const dfv=document.getElementById('ppF').value?new Date(document.getElementById('ppF').value+'T00:00:00'):null;
+const dtv=document.getElementById('ppT').value?new Date(document.getElementById('ppT').value+'T23:59:59'):null;
+if(dfv)d=d.filter(t=>t.date>=dfv);if(dtv)d=d.filter(t=>t.date<=dtv);return d;}
+function rPT(){const pt=gpd(),ps={};
+pt.forEach(t=>{if(!ps[t.partner])ps[t.partner]={done:0,pending:0,overdue:0,future:0,total:0,des:new Set()};ps[t.partner][t.status]++;ps[t.partner].total++;if(t.assigned!=='Unassigned')ps[t.partner].des.add(t.assigned);});
+const sorted=Object.entries(ps).sort((a,b)=>b[1].total-a[1].total);
+document.getElementById('pC').innerHTML=sorted.map(([n,v])=>{const past=v.total-v.future;const p=past?Math.round(v.done/past*100):0;return `<div class="dc" onclick="showPartner('${n.replace(/'/g,"\\'")}')"><div class="dn">${n}<span style="font-size:.7rem;color:var(--tm)">${v.total} →</span></div><div class="ds"><div>Done<span style="color:var(--dn)">${v.done}</span></div><div>Pend<span style="color:var(--pn)">${v.pending}</span></div><div>Ovd<span style="color:var(--ov)">${v.overdue}</span></div>${v.future?`<div>📅<span style="color:var(--ac2)">${v.future}</span></div>`:''}</div><div class="pb"><div class="fill" style="width:${p}%"></div></div><div style="font-size:.68rem;color:var(--tm);margin-top:2px">${[...v.des].join(', ')}</div></div>`;}).join('');
+const delays=sorted.filter(p=>p[1].overdue>0).sort((a,b)=>b[1].overdue-a[1].overdue).slice(0,10);
+document.getElementById('pD').innerHTML=delays.map(([n,v])=>`<div onclick="showPartner('${n.replace(/'/g,"\\'")}')" style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--bd);font-size:.8rem;cursor:pointer" onmouseover="this.style.background='var(--sf2)'" onmouseout="this.style.background=''"><span>${n}</span><span style="color:var(--ov);font-family:'Space Mono'">${v.overdue}/${v.total} →</span></div>`).join('')||'✅';
+const best=sorted.filter(p=>p[1].total>=3).sort((a,b)=>(b[1].done/b[1].total)-(a[1].done/a[1].total)).slice(0,10);
+document.getElementById('pB').innerHTML=best.map(([n,v])=>`<div style="padding:5px 0;border-bottom:1px solid var(--bd);font-size:.8rem;display:flex;justify-content:space-between"><span>${n}</span><span style="color:var(--dn);font-family:'Space Mono'">${Math.round(v.done/v.total*100)}% (${v.done}/${v.total})</span></div>`).join('');
+const top15=sorted.slice(0,15);
+mk('p1',{type:'bar',data:{labels:top15.map(p=>p[0]),datasets:[{label:'Done',data:top15.map(p=>p[1].done),backgroundColor:'#06d6a0',borderRadius:3},{label:'Pending',data:top15.map(p=>p[1].pending),backgroundColor:'#f59e0b',borderRadius:3},{label:'Overdue',data:top15.map(p=>p[1].overdue),backgroundColor:'#ef4444',borderRadius:3}]},options:{...CS,indexAxis:'y'}});}
+
+// MONTHLY
+function rMT(){const pt=PT(),mo={};
+pt.forEach(t=>{const k=t.date.getFullYear()+'-'+String(t.date.getMonth()+1).padStart(2,'0');if(!mo[k])mo[k]={done:0,pending:0,overdue:0,total:0,lb:t.date.toLocaleString('en-IN',{month:'short',year:'2-digit'}),ct:{}};mo[k][t.status]++;mo[k].total++;mo[k].ct[t.ctype]=(mo[k].ct[t.ctype]||0)+1;});
+const mks=Object.keys(mo).sort();
+mk('m1',{type:'bar',data:{labels:mks.map(k=>mo[k].lb),datasets:[{label:'Done',data:mks.map(k=>mo[k].done),backgroundColor:'#06d6a0',borderRadius:3},{label:'Pending',data:mks.map(k=>mo[k].pending),backgroundColor:'#f59e0b',borderRadius:3},{label:'Overdue',data:mks.map(k=>mo[k].overdue),backgroundColor:'#ef4444',borderRadius:3}]},options:CS});
+mk('m2',{type:'line',data:{labels:mks.map(k=>mo[k].lb),datasets:[{label:'Overdue %',data:mks.map(k=>mo[k].total?Math.round(mo[k].overdue/mo[k].total*100):0),borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,.1)',fill:true,tension:.3},{label:'Done %',data:mks.map(k=>mo[k].total?Math.round(mo[k].done/mo[k].total*100):0),borderColor:'#06d6a0',backgroundColor:'rgba(6,214,160,.1)',fill:true,tension:.3}]},options:CO});
+const ct={};pt.forEach(t=>{ct[t.ctype]=(ct[t.ctype]||0)+1;});
+mk('m3',{type:'doughnut',data:{labels:Object.keys(ct).map(k=>k[0].toUpperCase()+k.slice(1)),datasets:[{data:Object.values(ct),backgroundColor:['#06d6a0','#118ab2','#8b5cf6','#fbbf24'],borderWidth:0}]},options:{responsive:true,plugins:{legend:{labels:{color:'#94a3b8'}}}}});
+document.getElementById('mC').innerHTML=mks.reverse().slice(0,6).map(k=>{const m=mo[k],p=m.total?Math.round(m.done/m.total*100):0;return `<div class="dc"><div class="dn">${m.lb}</div><div class="ds"><div>Total<span style="color:var(--ac2)">${m.total}</span></div><div>Done<span style="color:var(--dn)">${m.done}</span></div><div>%<span style="color:${p>=50?'var(--dn)':'var(--ov)'}">${p}%</span></div></div><div class="pb"><div class="fill" style="width:${p}%"></div></div></div>`;}).join('');
+let ins='';const mk2=Object.keys(mo).sort();
+if(mk2.length>=2){const c=mo[mk2[mk2.length-1]],p=mo[mk2[mk2.length-2]];
+const cr=c.total?Math.round(c.done/c.total*100):0,pr=p.total?Math.round(p.done/p.total*100):0;
+if(cr>pr)ins+=`<div class="al green">📈 Done rate: ${pr}%→${cr}% (+${cr-pr}%)</div>`;else if(cr<pr)ins+=`<div class="al red">📉 Done rate: ${pr}%→${cr}%</div>`;
+if(c.total>p.total)ins+=`<div class="al yellow">📊 Workload: ${p.total}→${c.total} (+${c.total-p.total})</div>`;
+const co=c.total?Math.round(c.overdue/c.total*100):0,po=p.total?Math.round(p.overdue/p.total*100):0;
+if(co<po)ins+=`<div class="al green">✅ Overdue improving: ${po}%→${co}%</div>`;else if(co>po)ins+=`<div class="al red">⚠ Overdue worsening: ${po}%→${co}%</div>`;}
+document.getElementById('mI').innerHTML=ins||'Need 2+ months for insights.';}
+
+// 7PM
+function ck7(){const n=new Date(),tgt=new Date();tgt.setHours(19,0,0,0);if(n>=tgt&&!sessionStorage.getItem('r'+fi(T))){showRpt();sessionStorage.setItem('r'+fi(T),'1');}setInterval(()=>{const n2=new Date();if(n2.getHours()===19&&n2.getMinutes()===0&&!sessionStorage.getItem('r'+fi(T))){showRpt();sessionStorage.setItem('r'+fi(T),'1');}},60000);}
+function showRpt(){const pt=PT(),tt=pt.filter(t=>sd(t.date,T)),dn=tt.filter(t=>t.status==='done').length;
+document.getElementById('pDt').textContent=T.toLocaleDateString('en-IN',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+document.getElementById('pSt').innerHTML=`<div><div class="n" style="color:var(--ac2)">${tt.length}</div><div class="lb2">Total</div></div><div><div class="n" style="color:var(--dn)">${dn}</div><div class="lb2">Done</div></div><div><div class="n" style="color:var(--pn)">${tt.length-dn}</div><div class="lb2">Left</div></div><div><div class="n" style="color:var(--ov)">${pt.filter(t=>t.status==='overdue').length}</div><div class="lb2">Overdue</div></div>`;
+const ds={};tt.forEach(t=>{if(t.assigned==='Unassigned')return;if(!ds[t.assigned])ds[t.assigned]={d:0,p:0,ts:[]};if(t.status==='done')ds[t.assigned].d++;else ds[t.assigned].p++;ds[t.assigned].ts.push(t);});
+let b='';Object.entries(ds).forEach(([n,d])=>{const p=(d.d+d.p)?Math.round(d.d/(d.d+d.p)*100):0;b+=`<div style="padding:7px 0;border-bottom:1px solid var(--bd)"><div style="display:flex;justify-content:space-between;font-weight:600;font-size:.82rem"><span>${n}</span><span style="color:${p===100?'var(--dn)':'var(--pn)'}">${p}% (${d.d}/${d.d+d.p})</span></div>`;
+if(d.p>0)b+=`<div style="font-size:.72rem;color:var(--ov);margin-top:2px">⏳ ${d.ts.filter(t=>t.status!=='done').map(t=>t.partner).join(', ')}</div>`;b+=`</div>`;});
+document.getElementById('pBd').innerHTML=b;document.getElementById('pov').classList.add('show');}
+function cpop(){document.getElementById('pov').classList.remove('show');}
+</script>
+</body>
+</html>
