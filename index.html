@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DigiVirus — Task Tracker Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+:root{--bg:#0a0e17;--surface:#111827;--surface2:#1a2236;--border:#1e293b;--text:#e2e8f0;--text-muted:#64748b;--accent:#06d6a0;--accent2:#118ab2;--pending:#f59e0b;--done:#06d6a0;--overdue:#ef4444;--purple:#8b5cf6;--radius:12px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+.header{background:linear-gradient(135deg,#111827,#1a1a2e);border-bottom:1px solid var(--border);padding:16px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;backdrop-filter:blur(12px)}
+.header h1{font-family:'Space Mono',monospace;font-size:1.3rem;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.header-right{display:flex;align-items:center;gap:16px}
+.live-badge{display:flex;align-items:center;gap:8px;font-size:.8rem;color:var(--accent);font-weight:500}
+.live-badge .dot{width:8px;height:8px;background:var(--accent);border-radius:50%;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(6,214,160,.4)}50%{opacity:.6;box-shadow:0 0 0 8px rgba(6,214,160,0)}}
+.today-display{font-size:.82rem;color:var(--text-muted);font-family:'Space Mono',monospace}
+.dashboard{padding:24px 32px;max-width:1440px;margin:0 auto}
+.sync-banner{display:flex;align-items:center;gap:10px;padding:10px 16px;background:rgba(17,138,178,.08);border:1px solid rgba(17,138,178,.2);border-radius:8px;margin-bottom:16px;font-size:.82rem;color:var(--accent2);flex-wrap:wrap}
+.sync-banner strong{color:var(--text)}
+.quick-filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;align-items:center;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius)}
+.qf-label{font-size:.8rem;color:var(--text-muted);font-weight:600;margin-right:4px}
+.qf-btn{padding:6px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;color:var(--text-muted);font-size:.82rem;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+.qf-btn:hover{border-color:var(--accent2);color:var(--text)}
+.qf-btn.active{background:rgba(6,214,160,.12);border-color:var(--accent);color:var(--accent);font-weight:600}
+.qf-sep{width:1px;height:24px;background:var(--border);margin:0 8px}
+.filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;align-items:center}
+.filter-chip{padding:7px 14px;background:var(--surface);border:1px solid var(--border);border-radius:20px;color:var(--text-muted);font-size:.82rem;cursor:pointer;font-family:'DM Sans',sans-serif}
+.filter-chip:hover,.filter-chip.active{background:rgba(6,214,160,.1);border-color:var(--accent);color:var(--accent)}
+.filter-date{padding:7px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.82rem;outline:none}
+.filter-date:focus{border-color:var(--accent)}
+.filter-label{font-size:.78rem;color:var(--text-muted)}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:24px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.stat-card.total::before{background:var(--accent2)}.stat-card.done::before{background:var(--done)}.stat-card.pending::before{background:var(--pending)}.stat-card.overdue::before{background:var(--overdue)}.stat-card.rate::before{background:var(--purple)}.stat-card.today-stat::before{background:linear-gradient(90deg,#06d6a0,#118ab2)}
+.stat-card .stat-label{font-size:.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;font-weight:500}
+.stat-card .stat-value{font-family:'Space Mono',monospace;font-size:1.8rem;font-weight:700;margin-top:4px}
+.stat-card .stat-sub{font-size:.72rem;color:var(--text-muted);margin-top:2px}
+.stat-card.total .stat-value{color:var(--accent2)}.stat-card.done .stat-value{color:var(--done)}.stat-card.pending .stat-value{color:var(--pending)}.stat-card.overdue .stat-value{color:var(--overdue)}.stat-card.rate .stat-value{color:var(--purple)}.stat-card.today-stat .stat-value{color:var(--accent)}
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:24px}
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px}
+.chart-card h3{font-family:'Space Mono',monospace;font-size:.88rem;color:var(--text);margin-bottom:14px}
+.chart-card canvas{max-height:260px}
+.weekly-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:24px}
+.weekly-section h3{font-family:'Space Mono',monospace;font-size:1rem;margin-bottom:16px;color:var(--accent)}
+.weekly-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-bottom:16px}
+.week-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;transition:all .2s}
+.week-card:hover,.week-card.active{border-color:var(--accent)}
+.week-card .wk-title{font-weight:700;font-size:.9rem;margin-bottom:6px}
+.week-card .wk-dates{font-size:.78rem;color:var(--text-muted);margin-bottom:10px}
+.week-card .wk-row{display:flex;justify-content:space-between;font-size:.82rem;padding:3px 0}
+.week-card .wk-row .label{color:var(--text-muted)}.week-card .wk-row .val{font-family:'Space Mono',monospace;font-weight:700}
+.week-card .wk-row .val.green{color:var(--done)}.week-card .wk-row .val.yellow{color:var(--pending)}.week-card .wk-row .val.red{color:var(--overdue)}.week-card .wk-row .val.blue{color:var(--accent2)}
+.wk-progress{height:5px;background:var(--border);border-radius:3px;overflow:hidden;margin-top:10px}
+.wk-progress .fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:3px}
+.weekly-chart-area{margin-top:16px}.weekly-chart-area canvas{max-height:250px}
+.table-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:24px}
+.table-header{padding:14px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border)}
+.table-header h3{font-family:'Space Mono',monospace;font-size:.9rem}.table-header .count{font-size:.8rem;color:var(--text-muted)}
+.task-table{width:100%;border-collapse:collapse}
+.task-table th{padding:10px 14px;text-align:left;font-size:.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600;border-bottom:1px solid var(--border);background:var(--surface2)}
+.task-table td{padding:10px 14px;font-size:.85rem;border-bottom:1px solid rgba(30,41,59,.5)}
+.task-table tr:hover td{background:rgba(6,214,160,.03)}
+.status-badge{padding:3px 10px;border-radius:20px;font-size:.76rem;font-weight:600;display:inline-block}
+.status-badge.done{background:rgba(6,214,160,.15);color:var(--done)}.status-badge.pending{background:rgba(245,158,11,.15);color:var(--pending)}.status-badge.overdue{background:rgba(239,68,68,.15);color:var(--overdue)}
+.table-scroll{max-height:450px;overflow-y:auto}
+.days-badge{font-size:.72rem;color:var(--text-muted);font-family:'Space Mono',monospace}.days-badge.late{color:var(--overdue)}
+.designer-section h3{font-family:'Space Mono',monospace;font-size:1rem;margin-bottom:14px}
+.designer-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-bottom:24px}
+.designer-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;transition:border-color .2s}
+.designer-card:hover{border-color:var(--accent2)}
+.designer-card .d-name{font-weight:700;font-size:.95rem;margin-bottom:10px}
+.designer-card .d-stats{display:flex;gap:14px;margin-bottom:10px}
+.designer-card .d-stat{font-size:.78rem;color:var(--text-muted)}
+.designer-card .d-stat span{font-family:'Space Mono',monospace;font-weight:700;font-size:1rem;display:block;margin-top:2px}
+.progress-bar{height:5px;background:var(--surface2);border-radius:3px;overflow:hidden}
+.progress-bar .fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .5s ease}
+.refresh-bar{text-align:center;padding:8px;font-size:.72rem;color:var(--text-muted)}
+.hidden{display:none!important}
+.loading-overlay{position:fixed;inset:0;background:rgba(10,14,23,.92);display:flex;align-items:center;justify-content:center;z-index:200;flex-direction:column;gap:16px}
+.spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{color:var(--text-muted);font-size:.9rem}
+.error-banner{padding:12px 20px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:8px;margin-bottom:16px;font-size:.85rem;color:var(--overdue);display:none}
+@media(max-width:768px){.header{padding:14px 16px;flex-wrap:wrap;gap:8px}.header h1{font-size:1rem}.dashboard{padding:14px}.charts-grid{grid-template-columns:1fr}.quick-filters{flex-direction:column;align-items:flex-start}.qf-sep{display:none}.stats-grid{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>📊 DigiVirus Task Tracker</h1>
+  <div class="header-right">
+    <div class="today-display" id="todayDisplay"></div>
+    <div class="live-badge">
+      <span class="dot"></span>
+      <span>LIVE</span>
+      <span id="lastRefresh" style="color:var(--text-muted);font-size:.72rem;"></span>
+    </div>
+  </div>
+</div>
+
+<div class="loading-overlay" id="loader">
+  <div class="spinner"></div>
+  <div class="loading-text">Loading data from Google Sheet...</div>
+</div>
+
+<div class="dashboard" id="dashboard">
+  <div class="sync-banner">
+    🔄 <strong>Auto-Sync ON</strong> — Sheet mein kuch bhi change karo, 60 sec mein dashboard khud update hoga.
+    <span id="nextRefresh" style="margin-left:auto;font-family:'Space Mono',monospace;font-size:.78rem;"></span>
+  </div>
+
+  <div class="error-banner" id="errorBanner"></div>
+
+  <div class="quick-filters">
+    <span class="qf-label">⚡ Quick:</span>
+    <button class="qf-btn active" data-qf="all" onclick="quickFilter('all',this)">All Time</button>
+    <button class="qf-btn" data-qf="today" onclick="quickFilter('today',this)">📅 Today</button>
+    <button class="qf-btn" data-qf="yesterday" onclick="quickFilter('yesterday',this)">Yesterday</button>
+    <button class="qf-btn" data-qf="thisweek" onclick="quickFilter('thisweek',this)">This Week</button>
+    <button class="qf-btn" data-qf="lastweek" onclick="quickFilter('lastweek',this)">Last Week</button>
+    <div class="qf-sep"></div>
+    <span class="qf-label">Status:</span>
+    <button class="qf-btn active" data-sf="all-status" onclick="statusFilter('all',this)">All</button>
+    <button class="qf-btn" data-sf="pending" onclick="statusFilter('pending',this)">● Pending</button>
+    <button class="qf-btn" data-sf="overdue" onclick="statusFilter('overdue',this)">⚠ Overdue</button>
+    <button class="qf-btn" data-sf="done" onclick="statusFilter('done',this)">✓ Done</button>
+  </div>
+
+  <div class="filters">
+    <span class="filter-label">Designer:</span>
+    <div id="designerFilters" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+    <span class="filter-label" style="margin-left:12px;">From:</span>
+    <input type="date" class="filter-date" id="dateFrom">
+    <span class="filter-label">To:</span>
+    <input type="date" class="filter-date" id="dateTo">
+    <button class="filter-chip" onclick="resetFilters()">✕ Reset All</button>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card today-stat"><div class="stat-label">📅 Today's Tasks</div><div class="stat-value" id="statToday">0</div><div class="stat-sub" id="statTodaySub">0 done, 0 pending</div></div>
+    <div class="stat-card total"><div class="stat-label">Total Tasks</div><div class="stat-value" id="statTotal">0</div></div>
+    <div class="stat-card done"><div class="stat-label">✓ Done</div><div class="stat-value" id="statDone">0</div></div>
+    <div class="stat-card pending"><div class="stat-label">● Pending (≤1 day)</div><div class="stat-value" id="statPending">0</div></div>
+    <div class="stat-card overdue"><div class="stat-label">⚠ Overdue (>1 day)</div><div class="stat-value" id="statOverdue">0</div></div>
+    <div class="stat-card rate"><div class="stat-label">Completion %</div><div class="stat-value" id="statRate">0%</div></div>
+  </div>
+
+  <div class="charts-grid">
+    <div class="chart-card"><h3>📊 Designer-wise Status</h3><canvas id="chartDesigner"></canvas></div>
+    <div class="chart-card"><h3>📈 Daily Task Trend</h3><canvas id="chartTrend"></canvas></div>
+    <div class="chart-card"><h3>🔵 Overall Status Split</h3><canvas id="chartPie"></canvas></div>
+    <div class="chart-card"><h3>📅 Partner-wise Tasks</h3><canvas id="chartPartner"></canvas></div>
+  </div>
+
+  <div class="weekly-section">
+    <h3>📆 Weekly Performance Report</h3>
+    <div class="weekly-grid" id="weeklyGrid"></div>
+    <div class="weekly-chart-area"><canvas id="chartWeekly"></canvas></div>
+  </div>
+
+  <div class="designer-section">
+    <h3>👤 Designer Performance</h3>
+    <div class="designer-grid" id="designerGrid"></div>
+  </div>
+
+  <div class="table-section">
+    <div class="table-header"><h3>📋 All Tasks</h3><span class="count" id="tableCount">0 tasks</span></div>
+    <div class="table-scroll">
+      <table class="task-table">
+        <thead><tr><th>Date</th><th>Partner</th><th>Content Category</th><th>Assigned To</th><th>Status</th><th>Age</th><th>Cross Check</th><th>Description</th></tr></thead>
+        <tbody id="taskBody"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="refresh-bar">Auto-refreshes every 60s · Sheet changes reflect automatically</div>
+</div>
+
+<script>
+// ============================================================
+// DIGIVIRUS TASK TRACKER - FINAL PRODUCTION BUILD
+// ============================================================
+
+// ===== YOUR GOOGLE APPS SCRIPT URL (CORS FREE, PERMANENT) =====
+const DATA_URL = 'https://script.google.com/macros/s/AKfycbzgmoCjDS_MOzaUo1qfg_NmA-_dQhJ87uHaAW_0K9mUW6O6iBijRKF9HQ_wyDzpHFg6/exec';
+
+let rawData=[], filteredData=[], allDesigners=[], charts={};
+let refreshInterval=null, countdownInterval=null, nextRefreshTime=null;
+let activeStatusFilter='all', activeQuickFilter='all';
+const TODAY=new Date(); TODAY.setHours(0,0,0,0);
+
+document.getElementById('todayDisplay').textContent=TODAY.toLocaleDateString('en-IN',{weekday:'short',day:'2-digit',month:'short',year:'numeric'});
+
+// ===== AUTO-LOAD ON PAGE OPEN =====
+window.addEventListener('DOMContentLoaded', function(){
+  fetchData();
+});
+
+function fetchData(){
+  document.getElementById('loader').classList.remove('hidden');
+  fetch(DATA_URL)
+    .then(r => r.text())
+    .then(text => {
+      document.getElementById('loader').classList.add('hidden');
+      document.getElementById('errorBanner').style.display='none';
+      const parsed = Papa.parse(text, {header:false, skipEmptyLines:true});
+      if(!parsed.data||parsed.data.length<2){showError('Data empty hai sheet mein');return;}
+      processRawCSV(parsed.data);
+      showDashboard();
+    })
+    .catch(err => {
+      document.getElementById('loader').classList.add('hidden');
+      showError('Fetch error: '+err.message+'. Check internet connection.');
+    });
+}
+
+function showError(msg){
+  const el=document.getElementById('errorBanner');
+  el.textContent='⚠ '+msg; el.style.display='block';
+}
+
+function normalizeHeader(h){return(h||'').toString().toLowerCase().replace(/[^a-z0-9]/g,'');}
+function mapColumns(headers){
+  const map={};
+  headers.forEach((h,i)=>{
+    const n=normalizeHeader(h);
+    if(n.includes('date'))map.date=i;
+    else if(n.includes('partner')||n.includes('name')){if(!map.partner)map.partner=i;}
+    else if(n.includes('content')&&n.includes('categ'))map.category=i;
+    else if(n.includes('assign'))map.assigned=i;
+    else if(n.includes('status'))map.status=i;
+    else if(n.includes('cross'))map.crossCheck=i;
+    else if(n.includes('desc'))map.description=i;
+  });
+  return map;
+}
+
+function processRawCSV(rows){
+  let headerIdx=0;
+  for(let i=0;i<Math.min(5,rows.length);i++){
+    if(rows[i].some(c=>normalizeHeader(c).includes('date'))){headerIdx=i;break;}
+  }
+  const colMap=mapColumns(rows[headerIdx]);
+  rawData=[];
+  for(let i=headerIdx+1;i<rows.length;i++){
+    const row=rows[i];
+    if(!row||row.every(c=>!c||!String(c).trim()))continue;
+    const dateStr=String(row[colMap.date]||'').trim();
+    const partner=String(row[colMap.partner]||'').trim();
+    const category=String(row[colMap.category]||'').trim();
+    const assigned=String(row[colMap.assigned]||'').trim();
+    const rawStatus=String(row[colMap.status]||'').trim().toLowerCase();
+    const crossCheck=String(row[colMap.crossCheck]||'').trim();
+    const description=String(row[colMap.description]||'').trim();
+    if(!assigned&&!partner&&!category)continue;
+
+    let taskDate=parseDate(dateStr);
+    let status='pending';
+    if(rawStatus.includes('done')){status='done';}
+    else if(taskDate){const diff=Math.floor((TODAY-taskDate)/864e5);if(diff>1)status='overdue';}
+    let ageDays=taskDate?Math.floor((TODAY-taskDate)/864e5):null;
+
+    rawData.push({date:taskDate,dateStr,partner,category,assigned:assigned||'Unassigned',status,rawStatus,crossCheck,description,ageDays});
+  }
+  allDesigners=[...new Set(rawData.map(d=>d.assigned))].filter(Boolean).sort();
+}
+
+function parseDate(str){
+  if(!str)return null;str=str.trim();
+  // Handle Google Sheets date format: "Mon Mar 08 2026 00:00:00 GMT+0530"
+  if(str.includes('GMT')||str.includes('Mon')||str.includes('Tue')||str.includes('Wed')||str.includes('Thu')||str.includes('Fri')||str.includes('Sat')||str.includes('Sun')){
+    const d=new Date(str);if(!isNaN(d.getTime())){d.setHours(0,0,0,0);return d;}
+  }
+  // DD/MM/YYYY or DD-MM-YYYY
+  let m=str.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+  if(m)return new Date(+m[3],+m[2]-1,+m[1]);
+  // YYYY-MM-DD
+  m=str.match(/(\d{4})-(\d{2})-(\d{2})/);
+  if(m)return new Date(+m[1],+m[2]-1,+m[3]);
+  const d=new Date(str);return isNaN(d.getTime())?null:d;
+}
+
+function showDashboard(){
+  document.getElementById('dashboard').style.display='block';
+  buildDesignerFilters();applyFiltersAndRender();
+  if(refreshInterval)clearInterval(refreshInterval);
+  refreshInterval=setInterval(()=>{fetchData();startCountdown();},60000);
+  startCountdown();updateRefreshTime();
+}
+
+function startCountdown(){
+  nextRefreshTime=Date.now()+60000;
+  if(countdownInterval)clearInterval(countdownInterval);
+  countdownInterval=setInterval(()=>{
+    const left=Math.max(0,Math.ceil((nextRefreshTime-Date.now())/1000));
+    document.getElementById('nextRefresh').textContent=`Next sync: ${left}s`;
+  },1000);
+}
+function updateRefreshTime(){
+  const n=new Date();
+  document.getElementById('lastRefresh').textContent=`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`;
+}
+
+// ===== FILTERS =====
+function quickFilter(type,el){
+  document.querySelectorAll('.qf-btn[data-qf]').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');activeQuickFilter=type;
+  const df=document.getElementById('dateFrom'),dt=document.getElementById('dateTo');
+  if(type==='all'){df.value='';dt.value='';}
+  else if(type==='today'){const s=fmtDI(TODAY);df.value=s;dt.value=s;}
+  else if(type==='yesterday'){const y=new Date(TODAY);y.setDate(y.getDate()-1);const s=fmtDI(y);df.value=s;dt.value=s;}
+  else if(type==='thisweek'){const s=getWS(TODAY),e=new Date(s);e.setDate(e.getDate()+6);df.value=fmtDI(s);dt.value=fmtDI(e);}
+  else if(type==='lastweek'){const ts=getWS(TODAY),e=new Date(ts);e.setDate(e.getDate()-1);const s=new Date(e);s.setDate(s.getDate()-6);df.value=fmtDI(s);dt.value=fmtDI(e);}
+  applyFiltersAndRender();
+}
+function statusFilter(type,el){
+  document.querySelectorAll('.qf-btn[data-sf]').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');activeStatusFilter=type;applyFiltersAndRender();
+}
+function getWS(d){const day=d.getDay(),diff=d.getDate()-day+(day===0?-6:1);return new Date(d.getFullYear(),d.getMonth(),diff);}
+function fmtDI(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function fmtDS(d){return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0');}
+
+function buildDesignerFilters(){
+  const c=document.getElementById('designerFilters');
+  c.innerHTML='<span class="filter-chip active" data-designer="all" onclick="toggleDesigner(this)">All</span>';
+  allDesigners.forEach(d=>{c.innerHTML+=`<span class="filter-chip" data-designer="${d}" onclick="toggleDesigner(this)">${d}</span>`;});
+}
+function toggleDesigner(el){
+  const chips=document.querySelectorAll('#designerFilters .filter-chip');
+  if(el.dataset.designer==='all'){chips.forEach(c=>c.classList.remove('active'));el.classList.add('active');}
+  else{chips[0].classList.remove('active');el.classList.toggle('active');if(!document.querySelector('#designerFilters .filter-chip.active'))chips[0].classList.add('active');}
+  applyFiltersAndRender();
+}
+function resetFilters(){
+  document.getElementById('dateFrom').value='';document.getElementById('dateTo').value='';
+  activeStatusFilter='all';activeQuickFilter='all';
+  document.querySelectorAll('.qf-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelector('.qf-btn[data-qf="all"]').classList.add('active');
+  document.querySelector('.qf-btn[data-sf="all-status"]').classList.add('active');
+  const chips=document.querySelectorAll('#designerFilters .filter-chip');
+  chips.forEach(c=>c.classList.remove('active'));chips[0].classList.add('active');
+  applyFiltersAndRender();
+}
+
+function applyFiltersAndRender(){
+  const ac=document.querySelectorAll('#designerFilters .filter-chip.active');
+  const sd=[...ac].map(c=>c.dataset.designer),allSel=sd.includes('all');
+  const dateFrom=document.getElementById('dateFrom').value?new Date(document.getElementById('dateFrom').value):null;
+  const dateTo=document.getElementById('dateTo').value?new Date(document.getElementById('dateTo').value):null;
+  filteredData=rawData.filter(t=>{
+    if(!allSel&&!sd.includes(t.assigned))return false;
+    if(dateFrom&&t.date&&t.date<dateFrom)return false;
+    if(dateTo&&t.date){const e=new Date(dateTo);e.setHours(23,59,59);if(t.date>e)return false;}
+    if(activeStatusFilter!=='all'&&t.status!==activeStatusFilter)return false;
+    return true;
+  });
+  renderStats();renderCharts();renderDesignerCards();renderTable();renderWeeklyReport();
+}
+
+function renderStats(){
+  const total=filteredData.length,done=filteredData.filter(t=>t.status==='done').length;
+  const pending=filteredData.filter(t=>t.status==='pending').length,overdue=filteredData.filter(t=>t.status==='overdue').length;
+  const rate=total?Math.round((done/total)*100):0;
+  const todayTasks=rawData.filter(t=>t.date&&t.date.getTime()===TODAY.getTime());
+  const todayDone=todayTasks.filter(t=>t.status==='done').length;
+  document.getElementById('statToday').textContent=todayTasks.length;
+  document.getElementById('statTodaySub').textContent=`${todayDone} done, ${todayTasks.length-todayDone} pending`;
+  document.getElementById('statTotal').textContent=total;
+  document.getElementById('statDone').textContent=done;
+  document.getElementById('statPending').textContent=pending;
+  document.getElementById('statOverdue').textContent=overdue;
+  document.getElementById('statRate').textContent=rate+'%';
+}
+
+function renderCharts(){
+  const co={responsive:true,maintainAspectRatio:true,plugins:{legend:{labels:{color:'#94a3b8',font:{family:'DM Sans',size:11}}}},scales:{x:{ticks:{color:'#64748b',font:{size:10}},grid:{color:'rgba(30,41,59,0.5)'}},y:{ticks:{color:'#64748b',font:{size:10}},grid:{color:'rgba(30,41,59,0.5)'}}}};
+  const ds={};filteredData.forEach(t=>{if(!ds[t.assigned])ds[t.assigned]={done:0,pending:0,overdue:0};ds[t.assigned][t.status]++;});
+  const dl=Object.keys(ds);
+  if(charts.designer)charts.designer.destroy();
+  charts.designer=new Chart(document.getElementById('chartDesigner'),{type:'bar',data:{labels:dl,datasets:[{label:'Done',data:dl.map(d=>ds[d].done),backgroundColor:'#06d6a0',borderRadius:4},{label:'Pending',data:dl.map(d=>ds[d].pending),backgroundColor:'#f59e0b',borderRadius:4},{label:'Overdue',data:dl.map(d=>ds[d].overdue),backgroundColor:'#ef4444',borderRadius:4}]},options:{...co,scales:{x:{...co.scales.x,stacked:true},y:{...co.scales.y,stacked:true}}}});
+
+  const dm={};filteredData.forEach(t=>{if(!t.dateStr)return;const k=t.dateStr.substring(0,15);if(!dm[k])dm[k]={total:0,done:0,d:t.date};dm[k].total++;if(t.status==='done')dm[k].done++;});
+  const sdArr=Object.entries(dm).sort((a,b)=>(a[1].d||0)-(b[1].d||0));
+  const sdLabels=sdArr.map(e=>e[1].d?fmtDS(e[1].d):e[0]);
+  if(charts.trend)charts.trend.destroy();
+  charts.trend=new Chart(document.getElementById('chartTrend'),{type:'line',data:{labels:sdLabels,datasets:[{label:'Total',data:sdArr.map(e=>e[1].total),borderColor:'#118ab2',backgroundColor:'rgba(17,138,178,0.1)',fill:true,tension:.3},{label:'Done',data:sdArr.map(e=>e[1].done),borderColor:'#06d6a0',backgroundColor:'rgba(6,214,160,0.1)',fill:true,tension:.3}]},options:co});
+
+  const dn=filteredData.filter(t=>t.status==='done').length,pn=filteredData.filter(t=>t.status==='pending').length,ov=filteredData.filter(t=>t.status==='overdue').length;
+  if(charts.pie)charts.pie.destroy();
+  charts.pie=new Chart(document.getElementById('chartPie'),{type:'doughnut',data:{labels:['Done','Pending','Overdue'],datasets:[{data:[dn,pn,ov],backgroundColor:['#06d6a0','#f59e0b','#ef4444'],borderWidth:0}]},options:{responsive:true,plugins:{legend:{labels:{color:'#94a3b8',font:{family:'DM Sans'}}}}}});
+
+  const pm={};filteredData.forEach(t=>{if(!t.partner)return;pm[t.partner]=(pm[t.partner]||0)+1;});
+  const ps=Object.entries(pm).sort((a,b)=>b[1]-a[1]).slice(0,12);
+  if(charts.partner)charts.partner.destroy();
+  charts.partner=new Chart(document.getElementById('chartPartner'),{type:'bar',data:{labels:ps.map(p=>p[0]),datasets:[{label:'Tasks',data:ps.map(p=>p[1]),backgroundColor:'#8b5cf6',borderRadius:4}]},options:{...co,indexAxis:'y'}});
+}
+
+function renderWeeklyReport(){
+  const weeks={};
+  rawData.forEach(t=>{if(!t.date)return;const ws=getWS(t.date),k=ws.getTime();if(!weeks[k])weeks[k]={start:ws,tasks:[]};weeks[k].tasks.push(t);});
+  const sorted=Object.values(weeks).sort((a,b)=>b.start-a.start);
+  const container=document.getElementById('weeklyGrid');
+  container.innerHTML=sorted.slice(0,8).map((w,i)=>{
+    const end=new Date(w.start);end.setDate(end.getDate()+6);
+    const total=w.tasks.length,done=w.tasks.filter(t=>t.status==='done').length;
+    const pending=w.tasks.filter(t=>t.status==='pending').length,overdue=w.tasks.filter(t=>t.status==='overdue').length;
+    const pct=total?Math.round((done/total)*100):0;
+    const isThis=getWS(TODAY).getTime()===w.start.getTime();
+    return `<div class="week-card ${isThis?'active':''}"><div class="wk-title">${isThis?'📌 This Week':i===1?'Last Week':'Week '+(sorted.length-i)}</div><div class="wk-dates">${fmtDS(w.start)} — ${fmtDS(end)}</div><div class="wk-row"><span class="label">Total</span><span class="val blue">${total}</span></div><div class="wk-row"><span class="label">Done</span><span class="val green">${done}</span></div><div class="wk-row"><span class="label">Pending</span><span class="val yellow">${pending}</span></div><div class="wk-row"><span class="label">Overdue</span><span class="val red">${overdue}</span></div><div class="wk-row"><span class="label">Completion</span><span class="val green">${pct}%</span></div><div class="wk-progress"><div class="fill" style="width:${pct}%"></div></div></div>`;
+  }).join('');
+  const cw=sorted.slice(0,6).reverse();
+  const labels=cw.map(w=>{const e=new Date(w.start);e.setDate(e.getDate()+6);return fmtDS(w.start)+'-'+fmtDS(e);});
+  if(charts.weekly)charts.weekly.destroy();
+  charts.weekly=new Chart(document.getElementById('chartWeekly'),{type:'bar',data:{labels,datasets:[{label:'Done',data:cw.map(w=>w.tasks.filter(t=>t.status==='done').length),backgroundColor:'#06d6a0',borderRadius:4},{label:'Pending',data:cw.map(w=>w.tasks.filter(t=>t.status==='pending').length),backgroundColor:'#f59e0b',borderRadius:4},{label:'Overdue',data:cw.map(w=>w.tasks.filter(t=>t.status==='overdue').length),backgroundColor:'#ef4444',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{labels:{color:'#94a3b8',font:{family:'DM Sans',size:11}}},title:{display:true,text:'Weekly Comparison',color:'#94a3b8',font:{family:'Space Mono',size:12}}},scales:{x:{stacked:true,ticks:{color:'#64748b',font:{size:10}},grid:{color:'rgba(30,41,59,0.5)'}},y:{stacked:true,ticks:{color:'#64748b',font:{size:10}},grid:{color:'rgba(30,41,59,0.5)'}}}}});
+}
+
+function renderDesignerCards(){
+  const c=document.getElementById('designerGrid'),s={};
+  filteredData.forEach(t=>{if(!s[t.assigned])s[t.assigned]={done:0,pending:0,overdue:0,total:0};s[t.assigned][t.status]++;s[t.assigned].total++;});
+  c.innerHTML=Object.entries(s).map(([n,s])=>{
+    const p=s.total?Math.round((s.done/s.total)*100):0;
+    return `<div class="designer-card"><div class="d-name">${n}</div><div class="d-stats"><div class="d-stat">Total<span>${s.total}</span></div><div class="d-stat" style="color:var(--done)">Done<span style="color:var(--done)">${s.done}</span></div><div class="d-stat" style="color:var(--pending)">Pending<span style="color:var(--pending)">${s.pending}</span></div><div class="d-stat" style="color:var(--overdue)">Overdue<span style="color:var(--overdue)">${s.overdue}</span></div></div><div class="progress-bar"><div class="fill" style="width:${p}%"></div></div><div style="text-align:right;font-size:.72rem;color:var(--text-muted);margin-top:4px;">${p}% complete</div></div>`;
+  }).join('');
+}
+
+function renderTable(){
+  const tb=document.getElementById('taskBody');
+  document.getElementById('tableCount').textContent=filteredData.length+' tasks';
+  tb.innerHTML=filteredData.map(t=>{
+    let age='-';if(t.ageDays!==null){if(t.ageDays===0)age='Today';else if(t.ageDays===1)age='1 day';else age=t.ageDays+' days';}
+    const dateDisplay=t.date?fmtDS(t.date)+'/'+t.date.getFullYear():t.dateStr||'-';
+    return `<tr><td>${dateDisplay}</td><td>${t.partner||'-'}</td><td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${t.category||'-'}</td><td>${t.assigned}</td><td><span class="status-badge ${t.status}">${t.status==='overdue'?'⚠ Overdue':t.status==='done'?'✓ Done':'● Pending'}</span></td><td><span class="days-badge ${t.status==='overdue'?'late':''}">${age}</span></td><td>${t.crossCheck?'✓':'-'}</td><td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${t.description||'-'}</td></tr>`;
+  }).join('');
+}
+
+document.getElementById('dateFrom').addEventListener('change',()=>{document.querySelectorAll('.qf-btn[data-qf]').forEach(b=>b.classList.remove('active'));applyFiltersAndRender();});
+document.getElementById('dateTo').addEventListener('change',()=>{document.querySelectorAll('.qf-btn[data-qf]').forEach(b=>b.classList.remove('active'));applyFiltersAndRender();});
+</script>
+</body>
+</html>
